@@ -15,9 +15,9 @@ from colorama import Fore, Style
 logger = logging.getLogger("logger")
 
 
-# Custom formatter for colored logging
+# 색상 로깅을 위한 사용자 정의 포맷터
 class ColoredFormatter(logging.Formatter):
-    # Define color codes for each log level
+    # 각 로그 수준에 대한 색상 코드 정의
     LEVEL_COLORS = {
         logging.DEBUG: Fore.BLUE,
         logging.INFO: Fore.WHITE,
@@ -27,35 +27,35 @@ class ColoredFormatter(logging.Formatter):
     }
 
     def format(self, record):
-        # Get the color for the log level
+        # 로그 수준에 대한 색상 가져오기
         level_color = self.LEVEL_COLORS.get(record.levelno, "")
-        # Format the log message
+        # 로그 메시지 포맷 지정
         formatted_message = super().format(record)
-        # Return the message with the color added
+        # 색상이 추가된 메시지 반환
         return f"{level_color}{formatted_message}{Style.RESET_ALL}"
 
 
-# Set up logging
+# 로깅 설정
 def setup_logger():
     logger = logging.getLogger("logger")
-    logger.setLevel(logging.DEBUG)  # Set the minimum logging level
+    logger.setLevel(logging.DEBUG)  # 최소 로깅 수준 설정
 
-    # Create a stream handler (output to console)
+    # 스트림 핸들러 생성 (콘솔 출력)
     handler = logging.StreamHandler()
     handler.setLevel(logging.DEBUG)
 
-    # Set the custom formatter
+    # 사용자 정의 포맷터 설정
     formatter = ColoredFormatter("%(asctime)s - %(levelname)s - %(message)s")
     handler.setFormatter(formatter)
 
-    # Add the handler to the logger
+    # 로거에 핸들러 추가
     logger.addHandler(handler)
 
     return logger
 
 
 def get_chains(mmcif_file):
-    """Return a list of chains in a MMCIF file."""
+    """MMCIF 파일의 체인 목록을 반환합니다."""
     parser = MMCIFParser(QUIET=True)
     structure = parser.get_structure("template", mmcif_file)
     chains = []
@@ -66,34 +66,34 @@ def get_chains(mmcif_file):
 
 
 def extract_sequence_from_mmcif(mmcif_file):
-    """Extract the sequence from a MMCIF file."""
+    """MMCIF 파일에서 서열을 추출합니다."""
     parser = MMCIFParser(QUIET=True)
     structure = parser.get_structure("template", mmcif_file)
     sequence = ""
-    model = structure[0]  # Assuming one model/chain only
+    model = structure[0]  # 단일 모델/체인만 있다고 가정
     for chain in model:
         for residue in chain:
-            if residue.id[0] == " ":  # Exclude heteroatoms
-                sequence += residue.resname[0]  # Simplified to take the first letter
+            if residue.id[0] == " ":  # 헤테로 원자 제외
+                sequence += residue.resname[0]  # 첫 글자만 가져오도록 단순화
     return sequence
 
 
-# Code from https://github.com/google-deepmind/alphafold3
+# 코드는 https://github.com/google-deepmind/alphafold3 에서 가져옴
 def query_to_hit_mapping(
     query_aligned: str, template_aligned: str
 ) -> Mapping[int, int]:
-    """0-based query index to hit index mapping."""
+    """0-기반 쿼리 인덱스를 히트 인덱스로 매핑합니다."""
     query_to_hit_mapping_out = {}
     hit_index = 0
     query_index = 0
     for q_char, t_char in zip(query_aligned, template_aligned):
-        # Gap inserted in the template
+        # 템플릿에 갭 삽입됨
         if q_char == "-":
             query_index += 1
-        # Deleted residue in the template (would be a gap in the query).
+        # 템플릿에서 삭제된 잔기 (쿼리에서는 갭).
         elif t_char == "-":
             hit_index += 1
-        # Normal aligned residue, in both query and template. Add to mapping.
+        # 쿼리와 템플릿 모두에 있는 정상적으로 정렬된 잔기. 매핑에 추가.
         else:
             query_to_hit_mapping_out[query_index] = hit_index
             query_index += 1
@@ -102,16 +102,16 @@ def query_to_hit_mapping(
 
 
 def align_and_map(query_seq, template_seq):
-    """Align two sequences and map the indices."""
-    # Perform pairwise alignment
+    """두 서열을 정렬하고 인덱스를 매핑합니다."""
+    # 쌍별 정렬 수행
     aligner = Align.PairwiseAligner()
     alignments = aligner.align(query_seq, template_seq)
-    alignment = alignments[0]  # Take the best alignment
+    alignment = alignments[0]  # 최적의 정렬 선택
 
     formatted_alignment = alignment._format_generalized().replace(" ", "")
     query_aligned, _, template_aligned, _ = formatted_alignment.split("\n")
 
-    # Map the aligned sequences
+    # 정렬된 서열 매핑
     aligned_mapping = query_to_hit_mapping(query_aligned, template_aligned)
 
     query_indices = []
@@ -132,14 +132,14 @@ def get_mmcif(
     tmpdir=None,
 ):
     """
-    Extract a chain from a CIF file and return a new CIF string with only the
-    specified chain, residues and metadata.
+    CIF 파일에서 체인을 추출하고 지정된 체인, 잔기 및 메타데이터만 포함하는
+    새로운 CIF 문자열을 반환합니다.
     """
 
     parser = MMCIFParser(QUIET=True)
     structure = parser.get_structure(pdb_id, cif)
 
-    # Extract release date from the CIF file
+    # CIF 파일에서 릴리스 날짜 추출
     mmcif_dict = parser._mmcif_dict
     headers_to_keep = [
         "_entry.id",
@@ -151,14 +151,14 @@ def get_mmcif(
         key: mmcif_dict[key] for key in headers_to_keep if key in mmcif_dict
     }
 
-    # Make metadata if missing
+    # 누락된 경우 메타데이터 생성
     if "_pdbx_audit_revision_history.revision_date" not in filtered_metadata:
         filtered_metadata["_pdbx_audit_revision_history.revision_date"] = time.strftime(
             "%Y-%m-%d"
         )
 
-    # For multimodel templates (e.g. NMR) pick a single representative model
-    # add a copy of the first model to the structure
+    # 다중 모델 템플릿(예: NMR)의 경우 단일 대표 모델 선택
+    # 구조에 첫 번째 모델의 복사본 추가
 
     if len(structure) > 1:
         for model_index in range(1, len(structure)):
@@ -184,7 +184,7 @@ def get_mmcif(
             for res in res_to_del:
                 chain.detach_child(res.id)
 
-    # Save the filtered structure to a new CIF file
+    # 필터링된 구조를 새 CIF 파일에 저장
     io = MMCIFIO()
     io.set_structure(structure)
     filtered_output = (
@@ -194,14 +194,14 @@ def get_mmcif(
     )
     io.save(filtered_output)
 
-    # Parse the filtered structure to get the modified MMCIF with no metadata
+    # 필터링된 구조를 파싱하여 메타데이터가 없는 수정된 MMCIF 가져오기
     structure = parser.get_structure(pdb_id, filtered_output)
     mmcif_dict = parser._mmcif_dict
 
-    # Add the filtered metadata to the MMCIF dictionary
+    # 필터링된 메타데이터를 MMCIF 딕셔너리에 추가
     mmcif_dict.update(filtered_metadata)
 
-    # Save the modified MMCIF with wanted metadata to a string
+    # 원하는 메타데이터가 포함된 수정된 MMCIF를 문자열로 저장
     string_io = StringIO()
     io.set_dict(mmcif_dict)
     io.save(string_io)
@@ -211,17 +211,17 @@ def get_mmcif(
     return string_io.getvalue()
 
 
-# runs for each sequence in the input json
+# 입력 JSON의 각 서열에 대해 실행
 def get_custom_template(
     sequence,
     target_id,
     custom_template,
     custom_template_chain,
 ):
-    """Add a custom template to the input json"""
+    """입력 JSON에 사용자 정의 템플릿을 추가합니다."""
 
-    # add code here to run the custom template but move the res to output
-    # Keep existing templates if they're present
+    # 여기에 사용자 정의 템플릿을 실행하는 코드를 추가하되, 결과는 출력으로 옮김
+    # 기존 템플릿이 있는 경우 유지
     if "templates" not in sequence["protein"]:
         templates = []
     else:
@@ -237,19 +237,19 @@ def get_custom_template(
             return sequence
 
     if not os.path.exists(custom_template):
-        msg = f"Custom template file {custom_template} not found"
+        msg = f"사용자 정의 템플릿 파일 {custom_template}을(를) 찾을 수 없습니다."
         logger.critical(msg)
         raise FileNotFoundError()
 
     chain_info = get_chains(custom_template)
     if len(chain_info) != 1 and not custom_template_chain:
-        msg = f"Custom template file {custom_template} contains \
-{len(chain_info)} chains. Please specify the chain to use with --custom_template_chain"
+        msg = f"사용자 정의 템플릿 파일 {custom_template}에 \
+{len(chain_info)}개의 체인이 포함되어 있습니다. --custom_template_chain으로 사용할 체인을 지정하십시오."
         raise ValueError(msg)
 
     if custom_template_chain and custom_template_chain not in chain_info:
-        msg = f"Custom template file {custom_template} does not \
-contain chain {custom_template_chain}"
+        msg = f"사용자 정의 템플릿 파일 {custom_template}에 \
+체인 {custom_template_chain}이(가) 포함되어 있지 않습니다."
         raise ValueError(msg)
 
     if not custom_template_chain:
@@ -271,26 +271,26 @@ contain chain {custom_template_chain}"
     template["queryIndices"] = query_indices
     template["templateIndices"] = template_indices
 
-    # Add the custom template to the start of the templates list
+    # 사용자 정의 템플릿을 템플릿 목록의 시작 부분에 추가
     templates.insert(0, template)
 
-    # Add template to the json
+    # JSON에 템플릿 추가
     sequence["protein"]["templates"] = templates
 
-    # Save the output json
+    # 출력 JSON 저장
     return sequence
 
 
 def make_dir(dir_path: Union[str, Path], overwrite: bool = False):
     """
-    Make a directory and return the Path object.
+    디렉터리를 만들고 Path 객체를 반환합니다.
 
     Args:
-        dir_path: The path to the directory to create.
-        overwrite: Whether to delete the directory if it already exists.
+        dir_path: 만들 디렉터리 경로입니다.
+        overwrite: 디렉터리가 이미 있는 경우 삭제할지 여부입니다.
 
     Returns:
-        The Path object for the created directory.
+        생성된 디렉터리에 대한 Path 객체입니다.
     """
     dir_path = Path(dir_path)
     if dir_path.exists():
@@ -298,7 +298,7 @@ def make_dir(dir_path: Union[str, Path], overwrite: bool = False):
             shutil.rmtree(dir_path)
         else:
             logger.error(
-                f"Directory {dir_path} already exists, use --override to replace it"
+                f"디렉터리 {dir_path}이(가) 이미 존재합니다. 바꾸려면 --override를 사용하십시오."
             )
             raise FileExistsError()
 
@@ -313,14 +313,16 @@ def check_input_json(
     test: bool = False,
 ):
     """
-    Check the input json file for missing fields and add default values.
+    입력 JSON 파일에서 누락된 필드를 확인하고 기본값을 추가합니다.
 
     Args:
-        input_json: The path to the input json file.
-        use_af3_templates: Whether to use the AlphaFold3 templates.
+        input_json: 입력 JSON 파일 경로입니다.
+        output_dir: 출력 디렉터리 경로입니다.
+        use_af3_templates: AlphaFold3 템플릿을 사용할지 여부입니다.
+        test: 테스트 모드인지 여부입니다.
 
     Returns:
-        None
+        Path: 처리된 JSON 파일의 경로입니다.
     """
     input_json = Path(input_json)
 
@@ -337,7 +339,7 @@ def check_input_json(
             if "unpairedMsaPath" in sequence[sequence_type]:
                 msa_path = sequence[sequence_type]["unpairedMsaPath"]
                 if not os.path.exists(msa_path):
-                    logger.error(f"MSA file {msa_path} not found")
+                    logger.error(f"MSA 파일 {msa_path}을(를) 찾을 수 없습니다.")
                     sys.exit(1)
                 with open(msa_path, "r") as f:
                     msa = f.read()
@@ -362,6 +364,7 @@ def check_input_json(
 
 
 def make_dummy_af3_db(output_dir):
+    """AlphaFold3용 더미 데이터베이스를 생성합니다."""
     dummy_af3_db = output_dir.joinpath("af3_db")
     dummy_files = [
         "bfd-first_non_consensus_sequences.fasta",

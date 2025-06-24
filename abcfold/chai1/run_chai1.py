@@ -23,26 +23,26 @@ def run_chai(
     template_hits_path: Path | None = None,
 ) -> bool:
     """
-    Run Chai-1 using the input JSON file
+    입력 JSON 파일을 사용하여 Chai-1을 실행합니다.
 
     Args:
-        input_json (Union[str, Path]): Path to the input JSON file
-        output_dir (Union[str, Path]): Path to the output directory
-        save_input (bool): If True, save the input fasta file and MSA to the output
-        directory
-        test (bool): If True, run the test command
-        number_of_models (int): Number of models to generate
-        num_recycles (int): Number of trunk recycles
-        use_templates_server (bool): If True, use templates from the server
-        template_hits_path (Path): Path to the template hits m8 file
+        input_json (Union[str, Path]): 입력 JSON 파일 경로
+        output_dir (Union[str, Path]): 출력 디렉터리 경로
+        save_input (bool): True인 경우 입력 fasta 파일과 MSA를 출력 디렉터리에 저장합니다.
+        test (bool): True인 경우 테스트 명령을 실행합니다.
+        number_of_models (int): 생성할 모델 수
+        num_recycles (int): 트렁크 재활용 횟수
+        use_templates_server (bool): True인 경우 서버의 템플릿을 사용합니다.
+        template_hits_path (Path | None): 템플릿 히트 m8 파일 경로
 
     Returns:
-        Bool: True if the Chai-1 run was successful, False otherwise
+        bool: Chai-1 실행이 성공하면 True, 그렇지 않으면 False
 
     """
     input_json = Path(input_json)
     output_dir = Path(output_dir)
 
+    # Chai-1 설치 여부 확인
     logger.debug("Checking if Chai-1 is installed")
     check_chai1()
 
@@ -114,20 +114,20 @@ def generate_chai_command(
     template_hits_path: Path | None = None,
 ) -> list:
     """
-    Generate the Chai-1 command
+    Chai-1 명령을 생성합니다.
 
     Args:
-        input_fasta (Union[str, Path]): Path to the input fasta file
-        msa_dir (Union[str, Path]): Path to the MSA directory
-        input_constraints (Union[str, Path]): Path to the input constraints file
-        output_dir (Union[str, Path]): Path to the output directory
-        number_of_models (int): Number of models to generate
-        num_recycles (int): Number of trunk recycles
-        use_templates_server (bool): If True, use templates from the server
-        template_hits_path (Path): Path to the template hits m8 file
+        input_fasta (Union[str, Path]): 입력 fasta 파일 경로
+        msa_dir (Union[str, Path]): MSA 디렉터리 경로
+        input_constraints (Union[str, Path]): 입력 제약 조건 파일 경로
+        output_dir (Union[str, Path]): 출력 디렉터리 경로
+        number_of_models (int): 생성할 모델 수
+        num_recycles (int): 트렁크 재활용 횟수
+        use_templates_server (bool): True인 경우 서버의 템플릿을 사용합니다.
+        template_hits_path (Path | None): 템플릿 히트 m8 파일 경로
 
     Returns:
-        list: The Chai-1 command
+        list: Chai-1 명령
 
     """
 
@@ -164,13 +164,13 @@ Please install kalign to use templates with Chai-1."
 
 def generate_chai_test_command() -> list:
     """
-    Generate the Chai-1 test command
+    Chai-1 테스트 명령을 생성합니다.
 
     Args:
         None
 
     Returns:
-        list: The Chai-1 test command
+        list: Chai-1 테스트 명령
     """
     chai_exe = Path(__file__).parent / "chai.py"
     return [

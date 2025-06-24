@@ -18,22 +18,23 @@ def run_alphafold3(
     num_recycles: int = 10,
 ) -> bool:
     """
-    Run Alphafold3 using the input JSON file
+    입력 JSON 파일을 사용하여 Alphafold3를 실행합니다.
 
     Args:
-        input_json (Union[str, Path]): Path to the input JSON file
-        output_dir (Union[str, Path]): Path to the output directory
-        model_params (Union[str, Path]): Path to the model parameters
-        database_dir (Union[str, Path]): Path to the database directory
-        sif_path (Union[str, Path, None]): Path to a Singularity image file
-        interactive (bool): If True, run the docker container in interactive mode
-        number_of_models (int): Number of models to generate
+        input_json (Union[str, Path]): 입력 JSON 파일 경로
+        output_dir (Union[str, Path]): 출력 디렉터리 경로
+        model_params (Union[str, Path]): 모델 매개변수 경로
+        database_dir (Union[str, Path]): 데이터베이스 디렉터리 경로
+        sif_path (Union[str, Path, None]): Singularity 이미지 파일 경로
+        interactive (bool): True인 경우 Docker 컨테이너를 대화형 모드로 실행합니다.
+        number_of_models (int): 생성할 모델 수
+        num_recycles (int): 재활용 횟수
 
     Returns:
-        Bool: True if the Alphafold3 run was successful, False otherwise
+        bool: Alphafold3 실행이 성공하면 True, 그렇지 않으면 False
 
     Raises:
-        subprocess.CalledProcessError: If the Alphafold3 command returns an error
+        subprocess.CalledProcessError: Alphafold3 명령이 오류를 반환하는 경우
 
     """
 
@@ -79,19 +80,20 @@ def generate_af3_cmd(
     interactive: bool = False,
 ) -> str:
     """
-    Generate the Alphafold3 command
+    Alphafold3 명령을 생성합니다.
 
     Args:
-        input_json (Union[str, Path]): Path to the input JSON file
-        output_dir (Union[str, Path]): Path to the output directory
-        model_params (Union[str, Path]): Path to the model parameters
-        database_dir (Union[str, Path]): Path to the database directory
-        sif_path (Union[str, Path, None]): Path to a Singularity image file
-        number_of_models (int): Number of models to generate
-        interactive (bool): If True, run the docker container in interactive mode
+        input_json (Union[str, Path]): 입력 JSON 파일 경로
+        output_dir (Union[str, Path]): 출력 디렉터리 경로
+        model_params (Union[str, Path]): 모델 매개변수 경로
+        database_dir (Union[str, Path]): 데이터베이스 디렉터리 경로
+        sif_path (Union[str, Path, None]): Singularity 이미지 파일 경로
+        number_of_models (int): 생성할 모델 수
+        num_recycles (int): 재활용 횟수
+        interactive (bool): True인 경우 Docker 컨테이너를 대화형 모드로 실행합니다.
 
     Returns:
-        str: The Alphafold3 command
+        str: Alphafold3 명령
     """
     input_json = Path(input_json)
     output_dir = Path(output_dir)

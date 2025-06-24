@@ -18,21 +18,19 @@ class BoltzOutput:
         name: str,
     ):
         """
-        Object to process the output of an Boltz run
+        Boltz 실행 출력을 처리하는 객체입니다.
 
         Args:
-            boltz_output_dir (Union[str, Path]): Path to the Boltz output directory
-            input_params (dict): Dictionary containing the input parameters used for the
-            Boltz run
-            name (str): Name given to the Boltz run
+            boltz_output_dir (Union[str, Path]): Boltz 출력 디렉터리 경로
+            input_params (dict): Boltz 실행에 사용된 입력 매개변수를 포함하는 딕셔너리
+            name (str): Boltz 실행에 지정된 이름
 
         Attributes:
-            output_dir (Path): Path to the Boltz output directory
-            input_params (dict): Dictionary containing the input parameters used for the
-            Boltz run
-            name (str): Name given to the Boltz run
-            output (dict): Dictionary containing the processed output the contents
-            of the Boltz output directory. The dictionary is structured as follows:
+            output_dir (Path): Boltz 출력 디렉터리 경로
+            input_params (dict): Boltz 실행에 사용된 입력 매개변수를 포함하는 딕셔너리
+            name (str): Boltz 실행에 지정된 이름
+            output (dict): Boltz 출력 디렉터리의 내용을 처리한 출력을 포함하는 딕셔너리입니다.
+                           딕셔너리 구조는 다음과 같습니다:
 
             {
                 1: {
@@ -51,13 +49,11 @@ class BoltzOutput:
                 },
                 ...
             }
-            pae_files (list): Ordered list of NpzFile objects containing the PAE data
-            plddt_files (list): Ordered list of NpzFile objects containing the PLDDT
-            data
-            pde_files (list):  Ordered list of NpzFile objects containing the PDE data
-            cif_files (list): Ordered list of CifFile objects containing the model data
-            scores_files (list): Ordered list of ConfidenceJsonFile objects containing
-            the model scores
+            pae_files (list): PAE 데이터를 포함하는 정렬된 NpzFile 객체 목록
+            plddt_files (list): PLDDT 데이터를 포함하는 정렬된 NpzFile 객체 목록
+            pde_files (list): PDE 데이터를 포함하는 정렬된 NpzFile 객체 목록
+            cif_files (list): 모델 데이터를 포함하는 정렬된 CifFile 객체 목록
+            scores_files (list): 모델 점수를 포함하는 정렬된 ConfidenceJsonFile 객체 목록
 
         """
         self.output_dir = Path(boltz_output_dir)
@@ -81,7 +77,7 @@ class BoltzOutput:
 
     def process_boltz_output(self):
         """
-        Function to process the output of a Boltz run
+        Boltz 실행 출력을 처리하는 함수입니다.
         """
         file_groups = {}
         for pathway in self.output_dir.rglob("*"):
@@ -132,15 +128,13 @@ class BoltzOutput:
 
     def add_plddt_to_cif(self):
         """
-        Add the PLDDT scores to the B-factors of the CIF files as this is not done
-        natively by Boltz
+        PLDDT 점수를 CIF 파일의 B-factor에 추가합니다. Boltz에서는 기본적으로 이 작업을 수행하지 않습니다.
 
         Returns:
             None
 
         Raises:
-            AssertionError: If the length of the PLDDT scores does not match the number
-            of residues in the CIF file
+            AssertionError: PLDDT 점수의 길이가 CIF 파일의 잔기 수와 일치하지 않는 경우
         """
         for cif_file, plddt_scores in zip(self.cif_files, self.plddt_files):
             cif_file = self.update_chain_labels(cif_file)
@@ -152,12 +146,12 @@ class BoltzOutput:
                 mode=ModelCount.RESIDUES, ligand_atoms=True, ptm_atoms=True
             )
 
-            assert sum(chain_lengths.values()) == len(plddt_score), "Length mismatch"
+            assert sum(chain_lengths.values()) == len(plddt_score), "길이 불일치"
 
             counter = 0
             for chain in cif_file.model[0]:
 
-                # Boltz does ligand plddt per atom so we need to count them separately
+                # Boltz는 원자당 리간드 plddt를 수행하므로 별도로 계산해야 합니다.
                 ligand = cif_file.check_ligand(chain)
 
                 for residue in chain:
@@ -173,7 +167,7 @@ class BoltzOutput:
 
     def pae_to_af3(self):
         """
-        Convert the PAE data from Boltz to the format used by Alphafold3
+        Boltz의 PAE 데이터를 Alphafold3에서 사용하는 형식으로 변환합니다.
 
         Returns:
             None
@@ -194,10 +188,10 @@ class BoltzOutput:
 
     def update_chain_labels(self, cif_file) -> CifFile:
         """
-        Function to update the chain labels in the CIF file
+        CIF 파일의 체인 레이블을 업데이트하는 함수입니다.
 
         Args:
-            cif_file (CifFile): CifFile object to update the chain labels for
+            cif_file (CifFile): 체인 레이블을 업데이트할 CifFile 객체
 
         """
         cif_file.relabel_chains(
@@ -207,10 +201,10 @@ class BoltzOutput:
 
     def get_input_yaml(self) -> BoltzYaml:
         """
-        Get the input yaml file used for the Boltz run
+        Boltz 실행에 사용된 입력 yaml 파일을 가져옵니다.
 
         Returns:
-            BoltzYaml: Object containing the input yaml file
+            BoltzYaml: 입력 yaml 파일을 포함하는 객체
         """
 
         by = BoltzYaml(self.output_dir, create_files=False)

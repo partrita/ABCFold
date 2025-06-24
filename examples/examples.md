@@ -1,3 +1,3 @@
-# AlphaFold 3 examples:
+# AlphaFold 3 예시:
 
-In the directory contains examples for input jsons for AlphaFold 3.0. To learn more about how to structure the input jsons, please refer to the [documentation](https://github.com/google-deepmind/alphafold3/blob/main/docs/input.md).
+이 디렉터리에는 AlphaFold 3.0용 입력 JSON 예시가 포함되어 있습니다. 입력 JSON 구성 방법에 대해 자세히 알아보려면 [문서](https://github.com/google-deepmind/alphafold3/blob/main/docs/input.md)를 참조하십시오.

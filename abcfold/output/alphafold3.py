@@ -13,21 +13,19 @@ class AlphafoldOutput:
         name: str,
     ):
         """
-        Object to process the output of an AlphaFold3 run
+        AlphaFold3 실행 출력을 처리하는 객체입니다.
 
         Args:
-            af3_output_dir (Union[str, Path]): Path to the AlphaFold3 output directory
-            input_params (dict): Dictionary containing the input parameters used for the
-            AlphaFold3 run
-            name (str): Name given to the AlphaFold3 run
+            af3_output_dir (Union[str, Path]): AlphaFold3 출력 디렉터리 경로
+            input_params (dict): AlphaFold3 실행에 사용된 입력 매개변수를 포함하는 딕셔너리
+            name (str): AlphaFold3 실행에 지정된 이름
 
         Attributes:
-            output_dir (Path): Path to the AlphaFold3 output directory
-            input_params (dict): Dictionary containing the input parameters used for the
-            AlphaFold3 run
-            name (str): Name given to the AlphaFold3 run
-            output (dict): Dictionary containing the processed output the contents
-            of the AlphaFold3 output directory. The dictionary is structured as follows:
+            output_dir (Path): AlphaFold3 출력 디렉터리 경로
+            input_params (dict): AlphaFold3 실행에 사용된 입력 매개변수를 포함하는 딕셔너리
+            name (str): AlphaFold3 실행에 지정된 이름
+            output (dict): AlphaFold3 출력 디렉터리의 내용을 처리한 출력을 포함하는 딕셔너리입니다.
+                           딕셔너리 구조는 다음과 같습니다:
 
             {
                 "seed-1": {
@@ -42,7 +40,7 @@ class AlphafoldOutput:
                 },
                 etc...
             }
-            This is different to the boltz and chai equivalent as they do not have seeds
+            이는 Boltz 및 Chai 해당 항목과 다릅니다. 시드가 없기 때문입니다.
         """
         self.output_dir = Path(af3_output_dir)
         self.input_params = input_params
@@ -72,7 +70,7 @@ class AlphafoldOutput:
 
     def process_af3_output(self):
         """
-        Process the output of an AlphaFold3 run
+        AlphaFold3 실행 출력을 처리합니다.
 
         """
         file_groups = {}
@@ -114,8 +112,11 @@ class AlphafoldOutput:
         return file_groups
 
     def get_chain_ids(self) -> list:
+        """
+        입력 매개변수에서 체인 ID를 가져옵니다.
+        """
         ids: list = []
-        assert "sequences" in self.input_params
+        assert "sequences" in self.input_params # 입력 매개변수에 "sequences"가 있는지 확인
         for sequences in self.input_params["sequences"]:
             for sequence_type, sequence_information in sequences.items():
                 if "id" not in sequence_information:
@@ -130,7 +131,8 @@ class AlphafoldOutput:
 
     def pae_to_af3(self):
         """
-        Convert the PAE data from Boltz to the format used by Alphafold3
+        AlphaFold3에서 사용하는 형식으로 PAE 데이터를 변환합니다.
+        (원래 Boltz용으로 작성되었으나, 이 클래스에서는 AlphaFold3 자체 출력 PAE를 처리합니다.)
 
         Returns:
             None
@@ -168,11 +170,10 @@ class AlphafoldOutput:
 
     def reorder_chains(self, cif_file: CifFile) -> CifFile:
         """
-        Function to update the chain order in the CIF file according to the ids in the
-        input file
+        입력 파일의 ID에 따라 CIF 파일의 체인 순서를 업데이트하는 함수입니다.
 
         Args:
-            cif_file (CifFile): CifFile object to update the chain labels for
+            cif_file (CifFile): 체인 레이블을 업데이트할 CifFile 객체
 
         """
         if [chain.id for chain in cif_file.get_chains()] == self.get_chain_ids():

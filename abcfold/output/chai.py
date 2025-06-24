@@ -19,22 +19,20 @@ class ChaiOutput:
         save_input: bool = False,
     ):
         """
-        Object to process the output of an Chai-1 run
+        Chai-1 실행 출력을 처리하는 객체입니다.
 
         Args:
-            chai_output_dir (Union[str, Path]): Path to the Chai-1 output directory
-            input_params (dict): Dictionary containing the input parameters used for the
-            Chai-1 run
-            name (str): Name given to the Chai-1 run
-            save_input (bool): If True, Chai-1 was run with the save_input flag
+            chai_output_dir (Union[str, Path]): Chai-1 출력 디렉터리 경로
+            input_params (dict): Chai-1 실행에 사용된 입력 매개변수를 포함하는 딕셔너리
+            name (str): Chai-1 실행에 지정된 이름
+            save_input (bool): True인 경우 Chai-1이 save_input 플래그로 실행되었습니다.
 
         Attributes:
-            input_params (dict): Dictionary containing the input parameters used for the
-            Chai-1 run
-            output_dir (Path): Path to the Chai-1 output directory
-            name (str): Name given to the Chai-1 run
-            output (dict): Dictionary containing the processed output the contents
-            of the Chai-1 output directory. The dictionary is structured as follows:
+            input_params (dict): Chai-1 실행에 사용된 입력 매개변수를 포함하는 딕셔너리
+            output_dir (Path): Chai-1 출력 디렉터리 경로
+            name (str): Chai-1 실행에 지정된 이름
+            output (dict): Chai-1 출력 디렉터리의 내용을 처리한 출력을 포함하는 딕셔너리입니다.
+                           딕셔너리 구조는 다음과 같습니다:
 
             {
                 1: {
@@ -49,10 +47,9 @@ class ChaiOutput:
                 },
                 ...
             }
-            pae_files (list): Ordered list of NpzFile objects containing the PAE data
-            cif_files (list): Ordered list of CifFile objects containing the CIF data
-            scores_files (list):  Ordered list of NpyFile objects containing the scores
-            data
+            pae_files (list): PAE 데이터를 포함하는 정렬된 NpzFile 객체 목록
+            cif_files (list): CIF 데이터를 포함하는 정렬된 CifFile 객체 목록
+            scores_files (list): 점수 데이터를 포함하는 정렬된 NpyFile 객체 목록
 
         """
         self.input_params = input_params
@@ -123,7 +120,7 @@ class ChaiOutput:
                     intermediate_dict["scores"] = file_
                 elif file_.pathway.stem.startswith("pred.model"):
                     file_.name = f"Chai-1_{model_number}"
-                    # Chai cif not recognised by pae-viewer, so we load and save
+                    # Chai cif는 pae-viewer에서 인식되지 않으므로 로드 후 저장합니다.
                     file_.to_file(file_.pathway)
                     intermediate_dict["cif"] = file_
                 elif file_.pathway.stem.startswith("pae_scores"):
@@ -140,7 +137,7 @@ class ChaiOutput:
 
     def pae_to_af3(self) -> None:
         """
-        Convert the Chai-1 PAE data to the format expected by AlphaFold3
+        Chai-1 PAE 데이터를 AlphaFold3에서 예상하는 형식으로 변환합니다.
 
         """
 
@@ -158,10 +155,10 @@ class ChaiOutput:
 
     def get_input_fasta(self) -> ChaiFasta:
         """
-        Function to get the input fasta file used for the Chai-1 run
+        Chai-1 실행에 사용된 입력 fasta 파일을 가져오는 함수입니다.
 
         Returns:
-            ChaiFasta: ChaiFasta object containing the input fasta file
+            ChaiFasta: 입력 fasta 파일을 포함하는 ChaiFasta 객체
 
         """
 
@@ -172,10 +169,10 @@ class ChaiOutput:
 
     def update_chain_labels(self, cif_file: CifFile) -> CifFile:
         """
-        Function to update the chain labels in the CIF file
+        CIF 파일의 체인 레이블을 업데이트하는 함수입니다.
 
         Args:
-            cif_file (CifFile): CifFile object to update the chain labels for
+            cif_file (CifFile): 체인 레이블을 업데이트할 CifFile 객체
 
         """
 

@@ -39,18 +39,17 @@ PLOTS_DIR = ".plots"
 
 
 def run(args, config, defaults, config_file):
-    """Run ABCFold
+    """ABCFold 실행
 
     Args:
-        args (argparse.Namespace): Arguments from the command line
-        config (configparser.SafeConfigParser): Config parser object
-        defaults (dict): Default values from the config file
-        config_file (Path): Path to the config file
+        args (argparse.Namespace): 명령줄 인수
+        config (configparser.SafeConfigParser): Config 파서 객체
+        defaults (dict): 설정 파일의 기본값
+        config_file (Path): 설정 파일 경로
 
 
     Raises:
-        SystemExit: If the database directory or model parameters directory is not found
-
+        SystemExit: 데이터베이스 디렉터리 또는 모델 매개변수 디렉터리를 찾을 수 없는 경우
 
     """
     outputs = []
@@ -75,7 +74,7 @@ def run(args, config, defaults, config_file):
             config.write(f)
 
     args = raise_argument_errors(args)
-    # Ensure that the input json file is valid
+    # 입력 JSON 파일이 유효한지 확인
     args.input_json = check_input_json(
         args.input_json,
         output_dir=args.output_dir,
@@ -219,7 +218,7 @@ def run(args, config, defaults, config_file):
 
         plot_dict = plots(outputs, args.output_dir.joinpath(PLOTS_DIR))
 
-        # Compile data to make output page
+        # 출력 페이지를 만들기 위한 데이터 컴파일
         programs_run = []
         cif_models = [
             cif_file
@@ -301,7 +300,7 @@ def run(args, config, defaults, config_file):
             alphafold_models["models"] + boltz_models["models"] + chai_models["models"]
         )
 
-        # Make the output directory for the models
+        # 모델을 위한 출력 디렉터리 생성
         os.makedirs(args.output_dir.joinpath("output_models"), exist_ok=True)
         output_models = []
         for model in combined_models:
@@ -319,7 +318,7 @@ def run(args, config, defaults, config_file):
             output_models.append(
                 args.output_dir.joinpath("output_models").joinpath(output_name)
             )
-        # Superpose the models
+        # 모델 중첩
         if len(output_models) > 1:
             superpose_models(output_models)
 
@@ -355,13 +354,13 @@ def run(args, config, defaults, config_file):
         else:
             programs = "Structure predictions for: " + programs_run[0]
 
-        # Create the index page
+        # 인덱스 페이지 생성
         HTML_OUT = args.output_dir.joinpath("index.html")
         html_out = Path(HTML_OUT).resolve()
         render_template(
             HTML_TEMPLATE,
             html_out,
-            # kwargs appear as variables in the template
+            # kwargs는 템플릿에서 변수로 나타남
             abcfold_html_dir=".feature_viewer",
             programs=programs,
             results_json=results_json,
@@ -369,10 +368,10 @@ def run(args, config, defaults, config_file):
         )
         logger.info(f"Output page written to {HTML_OUT}")
 
-        # Change to the output directory to run the server
+        # 서버 실행을 위해 출력 디렉터리로 변경
         os.chdir(args.output_dir)
 
-        # Make a script to open the output HTML file in the default web browser
+        # 기본 웹 브라우저에서 출력 HTML 파일을 여는 스크립트 생성
         output_open_html_script("open_output.py", port=PORT)
 
         if args.no_server:
@@ -384,15 +383,15 @@ view the output pages"
             return
 
         try:
-            # Start the server
+            # 서버 시작
             with socketserver.TCPServer(("", PORT), NoCacheHTTPRequestHandler) as httpd:
                 logger.info(
                     f"Serving at port {PORT}: http://localhost:{PORT}/index.html"
                 )
                 logger.info("Press Ctrl+C to stop the server")
-                # Open the main HTML page in the default web browser
+                # 기본 웹 브라우저에서 메인 HTML 페이지 열기
                 webbrowser.open(f"http://localhost:{PORT}/index.html")
-                # Keep the server running
+                # 서버 계속 실행
                 httpd.serve_forever()
         except KeyboardInterrupt:
             logger.info("Server stopped")
@@ -402,7 +401,7 @@ view the output pages"
 
 def main():
     """
-    Run AlphaFold3 / Boltz / Chai-1
+    AlphaFold3 / Boltz / Chai-1 실행
     """
     import argparse
 

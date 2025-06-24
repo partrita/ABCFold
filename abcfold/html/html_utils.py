@@ -21,13 +21,13 @@ PORT = 8000
 
 def get_plddt_regions(plddts: Union[np.ndarray, list]) -> dict:
     """
-    Get the pLDDT regions for the model
+    모델의 pLDDT 영역을 가져옵니다.
     """
     if not isinstance(plddts, np.ndarray):
         plddts = np.array(plddts)
 
     regions = {}
-    # replace none values with -1
+    # None 값을 -1로 바꿉니다.
     plddts = np.where(plddts is None, -1, plddts)
 
     v_low = np.where((0 <= plddts) & (plddts <= 50))[0]
@@ -44,7 +44,7 @@ def get_plddt_regions(plddts: Union[np.ndarray, list]) -> dict:
 
 def get_regions_helper(indices):
     """
-    Get the regions from the indices
+    인덱스에서 영역을 가져옵니다.
     """
     regions = []
     for _, g in groupby(enumerate(indices), lambda x: x[0] - x[1]):
@@ -56,14 +56,13 @@ def get_regions_helper(indices):
 
 def get_model_sequence_data(cif_objs) -> dict:
     """
-    Get the sequence for each chain and ligand in the model, used internally
-    for plotting
+    모델의 각 체인 및 리간드에 대한 서열을 가져옵니다. 플로팅을 위해 내부적으로 사용됩니다.
 
     Args:
-        cif_objs : A list of CifFile objs
+        cif_objs : CifFile 객체 목록
 
     Returns:
-        dict : Chain ID and sequence data
+        dict : 체인 ID 및 서열 데이터
     """
     sequence_data: dict = {}
     for cif_obj in cif_objs:
@@ -101,14 +100,15 @@ def get_model_sequence_data(cif_objs) -> dict:
 
 def get_model_data(model, plot_dict, method, plddt_scores, score_file, output_dir):
     """
-    Get the model data for the output page
+    출력 페이지에 대한 모델 데이터를 가져옵니다.
 
     Args:
-        model (CifFile): Model object
-        plot_dict (dict): Dictionary of plots
-        method (str): Method used to generate the model
-        score_file (str): Path to the file containing model scores
-        output_dir (Path): Path to the output directory
+        model (CifFile): 모델 객체
+        plot_dict (dict): 플롯 딕셔너리
+        method (str): 모델 생성에 사용된 방법
+        plddt_scores : pLDDT 점수
+        score_file (str): 모델 점수를 포함하는 파일 경로
+        output_dir (Path): 출력 디렉터리 경로
     """
     regions = get_plddt_regions(plddt_scores)
     ptm_score, iptm_score = parse_scores(score_file)
@@ -143,10 +143,11 @@ class NoCacheHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
 def plots(outputs: list, output_dir: Path):
     """
-    Generate plots for the output of the different programs
+    다른 프로그램의 출력에 대한 플롯을 생성합니다.
 
     Args:
-        outputs (list): List of output objects
+        outputs (list): 출력 객체 목록
+        output_dir (Path): 출력 디렉터리 경로
 
     """
     pathway_plots = create_pae_plots(outputs, output_dir=output_dir)
@@ -161,17 +162,18 @@ def plots(outputs: list, output_dir: Path):
 
 def render_template(in_file_path, out_file_path, **kwargs):
     """
-    Templates the given file with the keyword arguments.
+    주어진 파일을 키워드 인수로 템플릿화합니다.
 
     Args:
-        in_file_path (Path): The path to the template.
-        out_file_path (Path): The path to output the templated file.
-        **kwargs (dict): Variables to use in templating.
+        in_file_path (Path): 템플릿 경로.
+        out_file_path (Path): 템플릿화된 파일을 출력할 경로.
+        **kwargs (dict): 템플릿팅에 사용할 변수.
     """
     env = Environment(
         loader=FileSystemLoader(in_file_path.parent), keep_trailing_newline=True
     )
     template = env.get_template(in_file_path.name)
+    # kwargs는 템플릿에서 변수로 나타남
     output = template.render(**kwargs)
     with open(str(out_file_path), "w") as f:
         f.write(output)
@@ -179,11 +181,11 @@ def render_template(in_file_path, out_file_path, **kwargs):
 
 def output_open_html_script(file_out: str, port: int = 8000):
     """
-    Make a python script to open the output HTML file in the default web browser
+    기본 웹 브라우저에서 출력 HTML 파일을 여는 파이썬 스크립트를 만듭니다.
 
     Args:
-        file_out (str): Path to the output script
-        port (int): Port to run the server on
+        file_out (str): 출력 스크립트 경로
+        port (int): 서버를 실행할 포트
     """
 
     script = f"""
@@ -223,6 +225,15 @@ def output_open_html_script(file_out: str, port: int = 8000):
 
 
 def get_all_cif_files(outputs) -> Dict[str, list]:
+    """
+    모든 CIF 파일을 가져옵니다.
+
+    Args:
+        outputs (list): 출력 객체 목록
+
+    Returns:
+        Dict[str, list]: 메서드 이름과 CIF 파일 객체 목록을 매핑하는 딕셔너리
+    """
     method_cif_objs: Dict[str, list] = {}
 
     for output in outputs:
@@ -242,13 +253,13 @@ def get_all_cif_files(outputs) -> Dict[str, list]:
 
 def parse_scores(score_file: Union[ConfidenceJsonFile, NpzFile]) -> tuple:
     """
-    Parse the scores from the score file
+    점수 파일에서 점수를 파싱합니다.
 
     Args:
-        score_file (Union[ConfidenceJsonFile, NpzFile]): The score file object.
+        score_file (Union[ConfidenceJsonFile, NpzFile]): 점수 파일 객체.
 
     Returns:
-        tuple: A tuple containing ptm_score and iptm_score as floats.
+        tuple: ptm_score와 iptm_score를 float으로 포함하는 튜플.
     """
     ptm_score = None
     iptm_score = None

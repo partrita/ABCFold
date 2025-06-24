@@ -20,27 +20,27 @@ def run_boltz(
     num_recycles: int = 10,
 ) -> bool:
     """
-    Run Boltz using the input JSON file
+    입력 JSON 파일을 사용하여 Boltz를 실행합니다.
 
     Args:
-        input_json (Union[str, Path]): Path to the input JSON file
-        output_dir (Union[str, Path]): Path to the output directory
-        save_input (bool): If True, save the input yaml file and MSA to the output
-        directory
-        test (bool): If True, run the test command
-        number_of_models (int): Number of models to generate
+        input_json (Union[str, Path]): 입력 JSON 파일 경로
+        output_dir (Union[str, Path]): 출력 디렉터리 경로
+        save_input (bool): True인 경우 입력 yaml 파일과 MSA를 출력 디렉터리에 저장합니다.
+        test (bool): True인 경우 테스트 명령을 실행합니다.
+        number_of_models (int): 생성할 모델 수
+        num_recycles (int): 재활용 횟수
 
     Returns:
-        Bool: True if the Boltz run was successful, False otherwise
+        bool: Boltz 실행이 성공하면 True, 그렇지 않으면 False
 
     Raises:
-        subprocess.CalledProcessError: If the Boltz command returns an error
-
+        subprocess.CalledProcessError: Boltz 명령이 오류를 반환하는 경우
 
     """
     input_json = Path(input_json)
     output_dir = Path(output_dir)
 
+    # Boltz 설치 여부 확인
     logger.debug("Checking if boltz is installed")
     check_boltz()
 
@@ -102,15 +102,16 @@ def generate_boltz_command(
     num_recycles: int = 10,
 ) -> list:
     """
-    Generate the Boltz command
+    Boltz 명령을 생성합니다.
 
     Args:
-        input_yaml (Union[str, Path]): Path to the input YAML file
-        output_dir (Union[str, Path]): Path to the output directory
-        number_of_models (int): Number of models to generate
+        input_yaml (Union[str, Path]): 입력 YAML 파일 경로
+        output_dir (Union[str, Path]): 출력 디렉터리 경로
+        number_of_models (int): 생성할 모델 수
+        num_recycles (int): 재활용 횟수
 
     Returns:
-        list: The Boltz command
+        list: Boltz 명령
     """
     return [
         "boltz",
@@ -130,13 +131,13 @@ def generate_boltz_command(
 
 def generate_boltz_test_command() -> list:
     """
-    Generate the test command for Boltz
+    Boltz에 대한 테스트 명령을 생성합니다.
 
     Args:
         None
 
     Returns:
-        list: The Boltz test command
+        list: Boltz 테스트 명령
     """
 
     return [

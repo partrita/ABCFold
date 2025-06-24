@@ -25,7 +25,7 @@ logger = logging.getLogger("logger")
 
 class FileTypes(Enum):
     """
-    Enum class for the different file types
+    다양한 파일 유형에 대한 Enum 클래스입니다.
     """
 
     NPZ = "npz"
@@ -40,7 +40,7 @@ class FileTypes(Enum):
 
 class ModelCount(Enum):
     """
-    Enum class for the different model count types
+    다양한 모델 카운트 유형에 대한 Enum 클래스입니다.
     """
 
     ALL = "all"
@@ -53,7 +53,7 @@ class ModelCount(Enum):
 
 class ResidueCountType(Enum):
     """
-    Enum class for the different residue count types
+    다양한 잔기 카운트 유형에 대한 Enum 클래스입니다.
     """
 
     AVERAGE = "average"
@@ -67,7 +67,7 @@ class ResidueCountType(Enum):
 
 class FileBase(ABC):
     """
-    Abstract base class for the different file types
+    다양한 파일 유형에 대한 추상 기본 클래스입니다.
     """
 
     def __init__(self, pathway: Union[str, Path]):
@@ -85,14 +85,14 @@ class NpzFile(FileBase):
 
     def __init__(self, npz_file: Union[str, Path]):
         """
-        Object to handle npz files
+        npz 파일을 처리하는 객체입니다.
 
         Args:
-            npz_file (Union[str, Path]): Path to the npz file
+            npz_file (Union[str, Path]): npz 파일 경로
 
         Attributes:
-            npz_file (Path): Path to the npz file
-            data (dict): Dictionary containing the data from the npz file
+            npz_file (Path): npz 파일 경로
+            data (dict): npz 파일의 데이터를 포함하는 딕셔너리
 
         """
         super().__init__(npz_file)
@@ -106,14 +106,14 @@ class NpzFile(FileBase):
 class NpyFile(FileBase):
     def __init__(self, npy_file: Union[str, Path]):
         """
-        Object to handle npy files
+        npy 파일을 처리하는 객체입니다.
 
         Args:
-            npy_file (Union[str, Path]): Path to the npy file
+            npy_file (Union[str, Path]): npy 파일 경로
 
         Attributes:
-            npy_file (Path): Path to the npy file
-            data (np.ndarray): Numpy array containing the data from the np
+            npy_file (Path): npy 파일 경로
+            data (np.ndarray): npy 파일의 데이터를 포함하는 Numpy 배열
         """
 
         super().__init__(npy_file)
@@ -128,24 +128,21 @@ class CifFile(FileBase):
 
     def __init__(self, cif_file: Union[str, Path], input_params: Optional[dict] = None):
         """
-        Object to handle cif files
+        cif 파일을 처리하는 객체입니다.
 
         Args:
-            cif_file (Union[str, Path]): Path to the cif file
-            input_params (Optional[dict]): Dictionary containing the input parameters
-            used for the model. This is used to distinguish between ligands and
-            sequences
+            cif_file (Union[str, Path]): cif 파일 경로
+            input_params (Optional[dict]): 모델에 사용된 입력 매개변수를 포함하는 딕셔너리입니다.
+                                         리간드와 서열을 구별하는 데 사용됩니다.
 
         Attributes:
-            cif_file (Path): Path to the cif file
-            model (Structure): BioPython structure object containing the model
-            atom_plddt_per_chain (dict): Dictionary containing the pLDDT scores for
-            each atom
-            residue_plddt_per_chain (dict): Dictionary containing the pLDDT scores for
-            each residue
-            plddts (list): List containing the pLDDT scores for each atom
-            residue_plddts (list): List containing the pLDDT scores for each residue
-            name (str): Name given to the model
+            cif_file (Path): cif 파일 경로
+            model (Structure): 모델을 포함하는 BioPython 구조 객체
+            atom_plddt_per_chain (dict): 각 원자에 대한 pLDDT 점수를 포함하는 딕셔너리
+            residue_plddt_per_chain (dict): 각 잔기에 대한 pLDDT 점수를 포함하는 딕셔너리
+            plddts (list): 각 원자에 대한 pLDDT 점수를 포함하는 목록
+            residue_plddts (list): 각 잔기에 대한 pLDDT 점수를 포함하는 목록
+            name (str): 모델에 지정된 이름
         """
         if input_params is None:
             self.input_params = {}
@@ -170,14 +167,14 @@ class CifFile(FileBase):
     @name.setter
     def name(self, name: str):
         if not isinstance(name, str):
-            logger.error("Name must be a string")
+            logger.error("이름은 문자열이어야 합니다.")
             raise ValueError()
         self.__name = name
 
     @property
     def plddts(self):
         """
-        The pLDDT scores for each atom in the model
+        모델의 각 원자에 대한 pLDDT 점수입니다.
         """
         self.__plddts = [
             plddts for plddts in self.get_plddt_per_atom().values() for plddts in plddts
@@ -187,7 +184,7 @@ class CifFile(FileBase):
     @property
     def residue_plddts(self):
         """
-        The pLDDT scores for each residue in the model
+        모델의 각 잔기에 대한 pLDDT 점수입니다.
         """
 
         self.__residue_plddts = [
@@ -200,14 +197,14 @@ class CifFile(FileBase):
     @property
     def average_plddt(self):
         """
-        The average pLDDT score for the model
+        모델의 평균 pLDDT 점수입니다.
         """
         return float(np.mean(self.plddts))
 
     @property
     def ligand_plddts(self):
         """
-        The pLDDT scores for each ligand in the model
+        모델의 각 리간드에 대한 pLDDT 점수입니다.
         """
         self.__ligand_plddts = self.get_plddt_per_ligand()
         return self.__ligand_plddts
@@ -215,19 +212,22 @@ class CifFile(FileBase):
     @property
     def h_score(self):
         """
-        The H score for the model
+        모델의 H 점수입니다.
         """
         self.__h_score = self.calculate_h_score()
         return self.__h_score
 
     def load_cif_file(self):
         """
-        Load the cif file using BioPython
+        BioPython을 사용하여 cif 파일을 로드합니다.
         """
         parser = MMCIFParser(QUIET=True)
         return parser.get_structure(self.pathway.stem, self.pathway)
 
     def get_chains(self):
+        """
+        모델의 체인 목록을 가져옵니다.
+        """
         return self.model[0]
 
     def chain_lengths(
@@ -237,17 +237,17 @@ class CifFile(FileBase):
         ptm_atoms=False,
     ) -> dict:
         """
-        Function to get the length of each chain in the model
+        모델의 각 체인 길이를 가져오는 함수입니다.
 
         Args:
-            mode (ModelCount): Enum class specifying the mode to use
-            Note: For ligands the length will always be the number of atoms
+            mode (ModelCount): 사용할 모드를 지정하는 Enum 클래스입니다.
+                               참고: 리간드의 경우 길이는 항상 원자 수가 됩니다.
 
         Returns:
-            dict: Dictionary containing the chain id and the length of the chain
+            dict: 체인 ID와 체인 길이를 포함하는 딕셔너리입니다.
 
         Raises:
-            ValueError: If the mode is not valid
+            ValueError: 모드가 유효하지 않은 경우 발생합니다.
         """
         chains = self.get_chains()
         if mode == ModelCount.ALL or mode == ModelCount.ALL.value:
@@ -302,17 +302,16 @@ class CifFile(FileBase):
             return residue_counts
 
         else:
-            msg = f"Invalid mode. Please use {', '.join(ModelCount.__members__)}"
+            msg = f"유효하지 않은 모드입니다. {', '.join(ModelCount.__members__)} 중 하나를 사용하십시오."
             logger.critical(msg)
             raise ValueError()
 
     def token_residue_ids(self) -> dict:
         """
-        Function to get the residue ids for each chain in the model
+        모델의 각 체인에 대한 잔기 ID를 가져오는 함수입니다.
 
         Returns:
-            dict: Dictionary containing the chain id and the residue ids for each
-            chain
+            dict: 각 체인의 체인 ID와 잔기 ID를 포함하는 딕셔너리입니다.
         """
         from abcfold.output.utils import flatten
 
@@ -339,10 +338,10 @@ class CifFile(FileBase):
 
     def calculate_h_score(self):
         """
-        Calculate the H score for the model
+        모델의 H 점수를 계산합니다.
 
         Returns:
-            float: The H score for the model
+            float: 모델의 H 점수입니다.
         """
 
         score = 0
@@ -354,11 +353,10 @@ class CifFile(FileBase):
 
     def get_model_sequence_data(self) -> dict:
         """
-        Get the sequence for each chain and ligand in the model, used internally
-        for plotting
+        모델의 각 체인 및 리간드에 대한 서열을 가져옵니다. 플로팅을 위해 내부적으로 사용됩니다.
 
         Returns:
-            dict : Chain ID and sequence data
+            dict : 체인 ID 및 서열 데이터
         """
         sequence_data = {}
         for chain in self.model[0]:
@@ -374,10 +372,10 @@ class CifFile(FileBase):
 
     def get_plddt_per_atom(self) -> dict:
         """
-        Get the pLDDT scores for each atom in the model
+        모델의 각 원자에 대한 pLDDT 점수를 가져옵니다.
 
         Returns:
-            dict: Dictionary containing the chain id and the pLDDT scores for each atom
+            dict: 각 원자의 체인 ID와 pLDDT 점수를 포함하는 딕셔너리입니다.
         """
         plddt: Dict[str, list] = {}
         for chain in self.model[0]:
@@ -393,20 +391,19 @@ class CifFile(FileBase):
 
     def get_plddt_per_residue(self, method=ResidueCountType.AVERAGE.value) -> dict:
         """
-        Get the pLDDT scores for each residue in the model
+        모델의 각 잔기에 대한 pLDDT 점수를 가져옵니다.
 
         Args:
-            method (ResidueCountType): Enum class specifying the method to use
+            method (ResidueCountType): 사용할 방법을 지정하는 Enum 클래스입니다.
 
         Returns:
-            dict: Dictionary containing the chain id and the pLDDT scores for each
-            residue
+            dict: 각 잔기의 체인 ID와 pLDDT 점수를 포함하는 딕셔너리입니다.
         """
         plddts: Dict[str, list] = {}
 
         if method not in ResidueCountType.values():
             logger.error(
-                f"Invalid method. Please use {', '.join(ResidueCountType.__members__)}"
+                f"유효하지 않은 방법입니다. {', '.join(ResidueCountType.__members__)} 중 하나를 사용하십시오."
             )
             raise ValueError()
 
@@ -453,15 +450,15 @@ class CifFile(FileBase):
         for chain_id in plddt_lengths:
             assert (
                 chain_lengths[chain_id] == plddt_lengths[chain_id]
-            ), f"{chain_id}, {chain_lengths[chain_id]} != {plddt_lengths[chain_id]}"
+            ), f"{chain_id}, {chain_lengths[chain_id]} != {plddt_lengths[chain_id]}" # 길이 불일치 확인
         return plddts
 
     def get_plddt_per_ligand(self) -> dict:
         """
-        Get the pLDDT scores for each ligand in the model
+        모델의 각 리간드에 대한 pLDDT 점수를 가져옵니다.
 
         Returns:
-            dict: Dictionary containing the chain id and the pLDDT scores for each atom
+            dict: 각 원자의 체인 ID와 pLDDT 점수를 포함하는 딕셔너리입니다.
         """
         plddt: Dict[str, list] = {}
         for chain in self.model[0]:
@@ -476,21 +473,31 @@ class CifFile(FileBase):
 
     def check_ligand(self, chain: Chain) -> bool:
         """
-        Check if the chain is a ligand
+        체인이 리간드인지 확인합니다.
 
         Args:
-            chain (Chain): BioPython chain object
+            chain (Chain): BioPython 체인 객체
 
         Returns:
-            bool: True if the chain is a ligand, False otherwise
+            bool: 체인이 리간드이면 True, 그렇지 않으면 False
         """
 
         return self.check_other(chain, ["ligand"])
 
     def check_other(self, chain: Chain, check_list) -> bool:
+        """
+        체인이 check_list의 유형 중 하나인지 확인합니다.
+
+        Args:
+            chain (Chain): 확인할 BioPython 체인 객체
+            check_list (list): 확인할 유형 목록 (예: ["protein", "dna"])
+
+        Returns:
+            bool: 체인이 check_list의 유형 중 하나이면 True, 그렇지 않으면 False
+        """
         sequences = self.input_params.get("sequences")
         if sequences is None:
-            logger.warning("Unable to gain sequence infromation from input file")
+            logger.warning("입력 파일에서 서열 정보를 가져올 수 없습니다.")
             return False
         for sequence in sequences:
             for sequence_type, sequence_data in sequence.items():
@@ -513,10 +520,11 @@ class CifFile(FileBase):
         self, chain_ids: List[str], link_ids: Optional[dict] = None
     ) -> None:
         """
-        Relabel the chains in the model
+        모델의 체인 레이블을 변경합니다.
 
         Args:
-            chain_ids (List[str]): List of chain ids to relabel the chains
+            chain_ids (List[str]): 체인 레이블을 변경할 체인 ID 목록입니다.
+            link_ids (Optional[dict]): 연결된 ID들을 나타내는 딕셔너리입니다.
 
         Returns:
             None
@@ -540,7 +548,7 @@ class CifFile(FileBase):
             chain = chain_ids[new_chain_label_counter]
             old_new_chain_id[chain_names[old_chain_label_counter]] = chain
 
-            # increment the old_chain everytime a chain has been relabelled
+            # 체인이 레이블 변경될 때마다 old_chain 증가
             old_chain_label_counter += 1
 
             if chain in link_ids:
@@ -560,19 +568,27 @@ class CifFile(FileBase):
 
         assert old_chain_label_counter == len(
             self.get_chains()
-        ), "Number of chain ids must match the number of chains"
+        ), "체인 ID 수는 체인 수와 일치해야 합니다."
         self.update()
 
     def update(self):
+        """
+        현재 CifFile 객체를 파일에 쓰고 다시 로드하여 업데이트합니다.
+        """
         self.to_file(self.pathway)
         self = CifFile(self.pathway, self.input_params)
 
     def reorder_chains(self, new_chain_ids: List[str]):
+        """
+        모델의 체인 순서를 변경합니다.
+
+        Args:
+            new_chain_ids (List[str]): 새로운 체인 ID 순서 목록입니다.
+        """
 
         assert sorted([chain.id for chain in self.get_chains()]) == sorted(
             new_chain_ids
-        ), "The chain ids need to be identical to what is in the model already \
-for reordering"
+        ), "재정렬을 위해서는 체인 ID가 모델에 이미 있는 것과 동일해야 합니다."
 
         new_model = Model.Model(0)
 
@@ -588,13 +604,15 @@ for reordering"
         clash_cutoff: float = 0.63,
     ) -> Tuple[List[Tuple[Atom, Atom]], List[Tuple[Residue, Residue]]]:
         """
-        Check for clashes between atoms in different chains
+        다른 체인의 원자 간 충돌을 확인합니다.
 
         Args:
-            threshold: The distance threshold for a clash.
+            threshold: 충돌에 대한 거리 임계값입니다.
+            bucket: KDTree 버킷 크기입니다.
+            clash_cutoff: 반 데르 발스 반경에 대한 충돌 계수입니다.
 
         Returns:
-            A list of clashes.
+            충돌 목록입니다. (원자 쌍 목록, 잔기 쌍 목록)
 
         """
         atoms = self.get_atoms()
@@ -613,10 +631,10 @@ for reordering"
         for neighbor in neighbors:
             i1, i2 = neighbor.index1, neighbor.index2
             atom1, atom2 = atoms[i1], atoms[i2]
-            # get the element of the atom
+            # 원자의 원소 가져오기
             element1 = atom1.element
             element2 = atom2.element
-            # find chain_id and residue_id
+            # chain_id 및 residue_id 찾기
             chain_id1 = atom1.get_full_id()[2]
             chain_id2 = atom2.get_full_id()[2]
 
@@ -649,13 +667,13 @@ for reordering"
 
     def get_atoms(self, chain_id=None) -> list:
         """
-        Get the atoms of the structure
+        구조의 원자를 가져옵니다.
 
         Args:
-            threshold: The distance threshold for a clash.
+            chain_id (str, optional): 특정 체인의 원자만 가져오려면 체인 ID를 지정합니다. 기본값은 None입니다.
 
         Returns:
-            A list of clashes.
+            list: 원자 목록입니다.
 
         """
         if chain_id is not None:
@@ -669,10 +687,10 @@ for reordering"
 
     def to_file(self, output_file: Union[str, Path]) -> None:
         """
-        Save the cif file
+        cif 파일을 저장합니다.
 
         Args:
-            output_file (Union[str, Path]): Path to save the cif file
+            output_file (Union[str, Path]): cif 파일을 저장할 경로입니다.
 
         Returns:
             None
@@ -680,7 +698,7 @@ for reordering"
         io = MMCIFIO()
         io.set_structure(self.model)
 
-        # save creates the dictionary
+        # save는 딕셔너리를 생성합니다.
         io.save(str(output_file))
         self.__atom_site_label_update(io.dic)
         self.__ligand_to_hetatm(io.dic)
@@ -690,6 +708,7 @@ for reordering"
         self.__single_to_double_quotes(output_file)
 
     def __single_to_double_quotes(self, file_name: Union[str, Path]) -> None:
+        # 파일 내 작은따옴표로 둘러싸인 문자열을 큰따옴표로 변경 (특정 PDB 형식 문제 해결용)
         new_lines = []
         with open(file_name, "r") as f:
             lines = [line.rstrip() for line in f]
@@ -705,6 +724,7 @@ for reordering"
             f.write("\n".join(new_lines))
 
     def __atom_site_label_update(self, out_dict):
+        # _atom_site.label_asym_id 필드를 체인 길이에 맞게 업데이트
         atom_site_labels_asym_ids = []
         for chain_id, chain_length in self.chain_lengths(mode="all").items():
             atom_site_labels_asym_ids.extend([chain_id] * chain_length)
@@ -719,6 +739,7 @@ for reordering"
         return out_dict
 
     def __ligand_to_hetatm(self, out_dict):
+        # 리간드 체인의 _atom_site.group_PDB 필드를 "HETATM"으로 설정
         atom_site_group_pdb = []
         counter = 0
         for chain_id, chain_length in self.chain_lengths(mode="all").items():
@@ -743,21 +764,21 @@ for reordering"
 class ConfidenceJsonFile(FileBase):
     def __init__(self, json_file: Union[str, Path]):
         """
-        Object to handle json files
+        JSON 파일을 처리하는 객체입니다. (주로 신뢰도 점수 관련)
 
         Args:
-            json_file (Union[str, Path]): Path to the json file
+            json_file (Union[str, Path]): JSON 파일 경로
 
         Attributes:
-            json_file (Path): Path to the json file
-            data (dict): Dictionary containing the data from the json file
+            json_file (Path): JSON 파일 경로
+            data (dict): JSON 파일의 데이터를 포함하는 딕셔너리
 
         """
         super().__init__(json_file)
         self.data = self.load_json_file()
 
     def load_json_file(self):
-        # load the json file
+        # JSON 파일 로드
         with open(self.pathway, "r") as f:
             data = json.load(f)
 
@@ -766,10 +787,10 @@ class ConfidenceJsonFile(FileBase):
 
 def superpose_models(models_list: List[Union[str, Path]]) -> None:
     """
-    Superpose the models in the list and save them to a new file
+    목록의 모델들을 중첩시키고 새 파일에 저장합니다.
 
     Args:
-        models_list (List[Union[str, Path]]): List of models to superpose
+        models_list (List[Union[str, Path]]): 중첩할 모델 목록
 
     Returns:
         None
@@ -790,7 +811,7 @@ def superpose_models(models_list: List[Union[str, Path]]) -> None:
                 if ref_res.resname != alt_res.resname or ref_res.id != alt_res.id:
                     pass
 
-                # Handle nucleotides and proteins differently
+                # 뉴클레오타이드와 단백질을 다르게 처리
                 if ref_res.resname in ["DA", "DT", "DG", "DC"]:
                     ref_atoms.append(ref_res["C1'"])
                     alt_atoms.append(alt_res["C1'"])
@@ -800,12 +821,12 @@ def superpose_models(models_list: List[Union[str, Path]]) -> None:
                 elif 'CA' in ref_res:
                     ref_atoms.append(ref_res['CA'])
                     alt_atoms.append(alt_res['CA'])
-                else:  # Ignore anything else
+                else:  # 그 외 다른 것은 무시
                     pass
 
         if len(ref_atoms) == 0 or len(alt_atoms) == 0:
             logger.warning(
-                f"No matching atoms found for superposition in {model}. Skipping."
+                f"{model}에서 중첩을 위한 일치하는 원자를 찾을 수 없습니다. 건너<0xEB><0x9B><0x84>니다."
             )
         else:
             super_imposer = Superimposer()
@@ -814,4 +835,4 @@ def superpose_models(models_list: List[Union[str, Path]]) -> None:
 
             io = MMCIFIO()
             io.set_structure(alt_structure)
-            io.save(str(model))  # overwrite the original file
+            io.save(str(model))  # 원본 파일 덮어쓰기

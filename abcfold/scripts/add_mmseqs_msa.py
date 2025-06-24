@@ -46,12 +46,13 @@ MODULE_OUTPUT_POS = {
 
 
 class MMseqs2Exception(Exception):
+    """MMseqs2 API 관련 오류를 위한 사용자 정의 예외 클래스입니다."""
     def __init__(self):
 
-        msg = "MMseqs2 API is giving errors. Please confirm your input is a valid \
-protein sequence. If error persists, please try again an hour later."
+        msg = "MMseqs2 API에서 오류가 발생하고 있습니다. 입력이 유효한 단백질 서열인지 확인하십시오. \
+오류가 지속되면 1시간 후에 다시 시도하십시오."
         logger.error(msg)
-        super().__init__()
+        super().__init__(msg) # Pass the message to the base Exception class
 
 
 def add_msa_to_json(
@@ -67,6 +68,34 @@ def add_msa_to_json(
     output_json=None,
     to_file=True,
 ):
+    """
+    AlphaFold3 입력 JSON 객체에 MMseqs2 MSA 및/또는 사용자 정의 템플릿을 추가합니다.
+
+    Args:
+        input_json (str or Path): 입력 AlphaFold3 JSON 파일 경로.
+        mmseqs_db (str or Path or None): 로컬 MMseqs2 데이터베이스 경로.
+                                         None이면 MMseqs2 웹 서버를 사용합니다.
+        templates (bool): 템플릿을 검색할지 여부.
+        num_templates (int): 사용할 템플릿 수.
+        chai_template_output (str or Path or bool): Chai 템플릿 히트를 저장할 경로,
+                                                   또는 사용하지 않는 경우 False.
+        custom_template (list or None): 사용자 정의 템플릿 CIF 파일 경로 목록.
+        custom_template_chain (list or None): 사용자 정의 템플릿에 대한 체인 ID 목록.
+        target_id (list or None): 사용자 정의 템플릿에 대한 대상 ID 목록.
+        input_params (dict, optional): 미리 로드된 입력 JSON(dict). 기본값은 None입니다.
+        output_json (str or Path, optional): 수정된 JSON을 저장할 경로.
+                                            None이고 to_file이 True이면
+                                            "_mmseqs" 접미사가 붙은 새 파일을 만듭니다.
+        to_file (bool, optional): 출력을 파일에 저장할지 여부. 기본값은 True입니다.
+
+    Returns:
+        dict: 수정된 AlphaFold3 JSON 객체.
+
+    Raises:
+        FileNotFoundError: 사용자 정의 템플릿 파일을 찾을 수 없는 경우.
+        ValueError: 템플릿 인수에 불일치가 있는 경우.
+        MMseqs2Exception: MMseqs2 API가 오류를 반환하는 경우.
+    """
     if input_params is None:
         with open(input_json, "r") as f:
             input_params = json.load(f)
@@ -77,7 +106,7 @@ def add_msa_to_json(
             input_sequence = sequence["protein"]["sequence"]
             with tempfile.TemporaryDirectory() as tmpdir:
                 if mmseqs_db:
-                    logger.info(f"Running Local MMseqs2 on sequence: {input_sequence}")
+                    logger.info(f"로컬 MMseqs2를 서열에 실행 중: {input_sequence}")
                     if templates:
                         a3m_lines, templates = run_local_mmseqs(
                             input_sequence,
@@ -94,8 +123,8 @@ def add_msa_to_json(
                             mmseqs_db=Path(mmseqs_db),
                         )
                 else:
-                    logger.info(f"Running MMseqs2 on sequence: {input_sequence}")
-                    # Run MMseqs2 to get unpaired MSA
+                    logger.info(f"MMseqs2를 서열에 실행 중: {input_sequence}")
+                    # MMseqs2를 실행하여 unpaired MSA 가져오기
                     if templates:
                         a3m_lines, templates = run_mmseqs(
                             input_sequence,
@@ -153,13 +182,13 @@ def add_msa_to_json(
                         templates = []
 
                 if custom_template:
-                    for template in custom_template:
-                        if not os.path.exists(template):
-                            msg = f"Custom template file {template} not found"
+                    for template_file in custom_template: # 변수명 변경: template -> template_file (상위 스코프 templates와 충돌 방지)
+                        if not os.path.exists(template_file):
+                            msg = f"사용자 정의 템플릿 파일 {template_file}을(를) 찾을 수 없습니다."
                             logger.critical(msg)
                             raise FileNotFoundError()
-                        # Can only add templates to protein sequences, so check if there
-                        # are multiple protein sequences in the input json
+                        # 단백질 서열에만 템플릿을 추가할 수 있으므로 입력 JSON에
+                        # 여러 단백질 서열이 있는지 확인합니다.
                         if (
                             len(
                                 [
@@ -171,37 +200,35 @@ def add_msa_to_json(
                             > 1
                             and not target_id
                         ):
-                            msg = "Multiple sequences found in input json. \
-Please specify target id so that custom template can be added to the correct sequence"
+                            msg = "입력 JSON에서 여러 서열이 발견되었습니다. \
+사용자 정의 템플릿을 올바른 서열에 추가하려면 대상 ID를 지정하십시오."
                             raise ValueError(msg)
 
                     if target_id and len(target_id) > 1:
                         if (len(custom_template) != len(target_id)) or (
                             len(custom_template_chain) != len(target_id)
                         ):
-                            msg = "If providing templates for multiple targets, the \
-number of target ids must match the number of custom templates and custom template \
-chains"
+                            msg = "여러 대상에 대한 템플릿을 제공하는 경우, 대상 ID의 수는 \
+사용자 정의 템플릿 및 사용자 정의 템플릿 체인의 수와 일치해야 합니다."
                             raise ValueError(msg)
-                        custom_templates = zip(
+                        custom_templates_zip = zip( # 변수명 변경: custom_templates -> custom_templates_zip
                             target_id, custom_template, custom_template_chain
                         )
                     else:
                         if len(custom_template) != len(custom_template_chain):
-                            msg = "Number of custom templates must match the number of \
-custom template chains"
+                            msg = "사용자 정의 템플릿의 수는 사용자 정의 템플릿 체인의 수와 일치해야 합니다."
                             raise ValueError(msg)
-                        # if a single target id is provided, assume all custom templates
-                        # are for the same target
+                        # 단일 대상 ID가 제공되면 모든 사용자 정의 템플릿이
+                        # 동일한 대상을 위한 것이라고 가정합니다.
                         if target_id:
                             target_ids = [target_id[0]] * len(custom_template)
                         else:
                             target_ids = [None] * len(custom_template)
-                        custom_templates = zip(
+                        custom_templates_zip = zip( # 변수명 변경: custom_templates -> custom_templates_zip
                             target_ids, custom_template, custom_template_chain
                         )
 
-                    for i in custom_templates:
+                    for i in custom_templates_zip: # 변수명 변경: custom_templates -> custom_templates_zip
                         tid, c_tem, c_tem_chn = i
                         sequence = get_custom_template(
                             sequence,
@@ -210,7 +237,7 @@ custom template chains"
                             c_tem_chn,
                         )
 
-                # Add unpaired MSA to the json
+                # JSON에 unpaired MSA 추가
                 sequence["protein"]["unpairedMsa"] = a3m_lines[0]
                 sequence["protein"]["pairedMsa"] = ""
                 sequence["protein"]["templates"] = templates
@@ -220,14 +247,16 @@ custom template chains"
             with open(output_json, "w") as f:
                 json.dump(input_params, f)
         else:
-            output_json = input_json.replace(".json", "_mmseqs.json")
+            # Path 객체로 변환 후 suffix 변경
+            input_json_path = Path(input_json)
+            output_json = input_json_path.with_name(f"{input_json_path.stem}_mmseqs.json")
             with open(output_json, "w") as f:
                 json.dump(input_params, f)
 
     return input_params
 
 
-# Lightly modified code from https://github.com/sokrypton/ColabFold
+# ColabFold에서 약간 수정된 코드: https://github.com/sokrypton/ColabFold
 def run_mmseqs(
     x,
     prefix,
@@ -253,7 +282,7 @@ def run_mmseqs(
         try:
             out = res.json()
         except ValueError:
-            logger.error(f"Server didn't reply with json: {res.text}")
+            logger.error(f"서버가 JSON으로 응답하지 않았습니다: {res.text}")
             out = {"status": "ERROR"}
         return out
 
@@ -262,23 +291,23 @@ def run_mmseqs(
         try:
             out = res.json()
         except ValueError:
-            logger.error(f"Server didn't reply with json: {res.text}")
+            logger.error(f"서버가 JSON으로 응답하지 않았습니다: {res.text}")
             out = {"status": "ERROR"}
         return out
 
     def download(ID, path):
         res = requests.get(f"{host_url}/result/download/{ID}")
-        with open(path, "wb") as out:
-            out.write(res.content)
+        with open(path, "wb") as out_file: # 변수명 out -> out_file (외부 out과 충돌 방지)
+            out_file.write(res.content)
 
-    # process input x
+    # 입력 x 처리
     seqs = [x] if isinstance(x, str) else x
 
-    # compatibility to old option
+    # 이전 옵션과의 호환성
     if filter is not None:
         use_filter = filter
 
-    # setup mode
+    # 모드 설정
     if use_filter:
         mode = "env" if use_env else "all"
     else:
@@ -289,66 +318,66 @@ def run_mmseqs(
         use_templates = False
         use_env = False
 
-    # define path
+    # 경로 정의
     path = prefix
     if not os.path.isdir(path):
         os.mkdir(path)
 
-    # call mmseqs2 api
+    # mmseqs2 api 호출
     tar_gz_file = f"{path}/out.tar.gz"
     N, REDO = 101, True
 
-    # deduplicate and keep track of order
+    # 중복 제거 및 순서 추적
     seqs_unique = list(set(seqs))
     Ms = [N + seqs_unique.index(seq) for seq in seqs]
-    # lets do it!
+    # 실행!
     if not os.path.isfile(tar_gz_file):
-        TIME_ESTIMATE = 150 * len(seqs_unique)
+        TIME_ESTIMATE = 150 * len(seqs_unique) # 예상 시간
         with tqdm(total=TIME_ESTIMATE, bar_format=TQDM_BAR_FORMAT) as pbar:
             while REDO:
-                pbar.set_description("SUBMIT")
+                pbar.set_description("제출 중") # SUBMIT -> 제출 중
 
-                # Resubmit job until it goes through
+                # 작업이 통과될 때까지 다시 제출
                 out = submit(seqs_unique, mode, N)
-                while out["status"] in ["UNKNOWN", "RATELIMIT"]:
+                while out["status"] in ["UNKNOWN", "RATELIMIT"]: # 상태가 UNKNOWN 또는 RATELIMIT인 동안
                     sleep_time = 5 + random.randint(0, 5)
-                    logger.info(f"Sleeping for {sleep_time}s. Reason: {out['status']}")
-                    # resubmit
+                    logger.info(f"{sleep_time}초 동안 대기합니다. 이유: {out['status']}")
+                    # 다시 제출
                     time.sleep(sleep_time)
                     out = submit(seqs_unique, mode, N)
 
                 if out["status"] == "ERROR":
                     raise MMseqs2Exception()
 
-                if out["status"] == "MAINTENANCE":
+                if out["status"] == "MAINTENANCE": # 유지보수 상태
                     raise MMseqs2Exception()
 
-                # wait for job to finish
+                # 작업 완료 대기
                 ID, TIME = out["id"], 0
-                pbar.set_description(out["status"])
-                while out["status"] in ["UNKNOWN", "RUNNING", "PENDING"]:
+                pbar.set_description(out["status"]) # 상태 표시줄 업데이트
+                while out["status"] in ["UNKNOWN", "RUNNING", "PENDING"]: # UNKNOWN, 실행 중, 대기 중 상태인 동안
                     t = 5 + random.randint(0, 5)
-                    logger.info(f"Sleeping for {t}s. Reason: {out['status']}")
+                    logger.info(f"{t}초 동안 대기합니다. 이유: {out['status']}")
                     time.sleep(t)
                     out = status(ID)
-                    pbar.set_description(out["status"])
-                    if out["status"] == "RUNNING":
+                    pbar.set_description(out["status"]) # 상태 표시줄 업데이트
+                    if out["status"] == "RUNNING": # 실행 중인 경우
                         TIME += t
                         pbar.update(n=t)
 
-                if out["status"] == "COMPLETE":
+                if out["status"] == "COMPLETE": # 완료된 경우
                     if TIME < TIME_ESTIMATE:
                         pbar.update(n=(TIME_ESTIMATE - TIME))
                     REDO = False
 
-                if out["status"] == "ERROR":
+                if out["status"] == "ERROR": # 오류 발생 시
                     REDO = False
                     raise MMseqs2Exception()
 
-            # Download results
+            # 결과 다운로드
             download(ID, tar_gz_file)
 
-    # prep list of a3m files
+    # a3m 파일 목록 준비
     if use_pairing:
         a3m_files = [f"{path}/pair.a3m"]
     else:
@@ -356,26 +385,26 @@ def run_mmseqs(
         if use_env:
             a3m_files.append(f"{path}/bfd.mgnify30.metaeuk30.smag30.a3m")
 
-    # extract a3m files
+    # a3m 파일 추출
     if any(not os.path.isfile(a3m_file) for a3m_file in a3m_files):
         with tarfile.open(tar_gz_file) as tar_gz:
             tar_gz.extractall(path)
 
-    # gather a3m lines
+    # a3m 라인 수집
     a3m_lines: dict = {}
     for a3m_file in a3m_files:
         a3m_lines = get_a3m_lines(a3m_file)
     a3m_lines_list = ["".join(a3m_lines[n]) for n in Ms]
 
     if use_templates:
-        templates = get_templates(
+        templates_list = get_templates( # 변수명 변경: templates -> templates_list
                 x,
                 Path(prefix),
                 "pdb70.m8",
                 num_templates,
             )
 
-    return (a3m_lines_list, templates) if use_templates else a3m_lines_list
+    return (a3m_lines_list, templates_list) if use_templates else a3m_lines_list # 변수명 변경
 
 
 def run_mmseqs_command(mmseqs: Path, params: List[Union[str, Path]]):
@@ -384,17 +413,17 @@ def run_mmseqs_command(mmseqs: Path, params: List[Union[str, Path]]):
         output_pos = MODULE_OUTPUT_POS[module]
         output_path = Path(params[output_pos]).with_suffix('.dbtype')
         if output_path.exists():
-            logger.info(f"Skipping {module} because {output_path} already exists")
+            logger.info(f"{module} 모듈을 건너<0xEB><0x9B><0x84>니다. {output_path} 파일이 이미 존재합니다.")
             return
 
     params_log = " ".join(str(i) for i in params)
-    logger.info(f"Running {mmseqs} {params_log}")
-    # hide MMseqs2 verbose paramters list that clogs up the log
+    logger.info(f"{mmseqs} {params_log} 실행 중")
+    # MMseqs2의 상세 매개변수 목록이 로그를 어지럽히는 것을 숨김
     os.environ["MMSEQS_CALL_DEPTH"] = "1"
     subprocess.check_call([str(mmseqs)] + [str(i) for i in params])
 
 
-# Lightly modified code from https://github.com/sokrypton/ColabFold
+# ColabFold에서 약간 수정된 코드: https://github.com/sokrypton/ColabFold
 def run_local_mmseqs(
     x,
     base,
@@ -418,7 +447,7 @@ def run_local_mmseqs(
 ) -> Sequence[object]:
 
     if filter:
-        # 0.1 was not used in benchmarks due to POSIX shell bug in line above
+        # 0.1은 위의 줄에 있는 POSIX 셸 버그로 인해 벤치마크에서 사용되지 않았습니다.
         #  EXPAND_EVAL=0.1
         align_eval = 10
         qsc = 0.8
@@ -448,7 +477,7 @@ def run_local_mmseqs(
 
     for db in used_dbs:
         if not mmseqs_db.joinpath(f"{db}.dbtype").is_file():
-            raise FileNotFoundError(f"Database {db} does not exist")
+            raise FileNotFoundError(f"데이터베이스 {db}가 존재하지 않습니다.")
         if (
             (
                 not mmseqs_db.joinpath(f"{db}.idx").is_file()
@@ -456,7 +485,7 @@ def run_local_mmseqs(
             )
             or os.environ.get("MMSEQS_IGNORE_INDEX", False)
         ):
-            logger.info("Search does not use index")
+            logger.info("검색에서 인덱스를 사용하지 않습니다.")
             db_load_mode = 0
             dbSuffix1 = "_seq"
             dbSuffix2 = "_aln"
@@ -470,12 +499,12 @@ def run_local_mmseqs(
                     "--db-load-mode", str(db_load_mode),
                     "-a", "-e", "0.1", "--max-seqs", "10000"]
     if gpu:
-        # gpu version only supports ungapped prefilter currently
+        # GPU 버전은 현재 갭 없는 프리필터만 지원합니다.
         search_param += ["--gpu", str(gpu), "--prefilter-mode", "1"]
     else:
         search_param += ["--prefilter-mode", str(prefilter_mode)]
-        # sensitivy can only be set for non-gpu version,
-        # gpu version runs at max sensitivity
+        # 감도는 비 GPU 버전에 대해서만 설정할 수 있으며,
+        # GPU 버전은 최대 감도로 실행됩니다.
         if s is not None:
             search_param += ["-s", "{:.1f}".format(s)]
         else:
@@ -493,6 +522,7 @@ def run_local_mmseqs(
                     "--expand-filter-clusters", str(filter),
                     "--max-seq-id", "0.95"]
 
+    # uniref.a3m.dbtype이 존재하지 않으면 uniref_db 검색 실행
     if not base.joinpath("uniref.a3m").with_suffix('.a3m.dbtype').exists():
         run_mmseqs_command(mmseqs,
                            ["search", base.joinpath("qdb"),
@@ -556,8 +586,9 @@ def run_local_mmseqs(
         run_mmseqs_command(mmseqs, ["rmdb", base.joinpath("res_exp")])
         run_mmseqs_command(mmseqs, ["rmdb", base.joinpath("res")])
     else:
-        logger.info(f"Skipping {uniref_db} search because uniref.a3m already exists")
+        logger.info(f"uniref.a3m 파일이 이미 존재하므로 {uniref_db} 검색을 건너<0xEB><0x9B><0x84>니다.")
 
+    # bfd.mgnify30.metaeuk30.smag30.a3m.dbtype이 존재하지 않으면 metagenomic_db 검색 실행
     bfd_exists = base.joinpath(
         "bfd.mgnify30.metaeuk30.smag30.a3m"
     ).with_suffix('.a3m.dbtype').exists()
@@ -620,9 +651,10 @@ def run_local_mmseqs(
         run_mmseqs_command(mmseqs, ["rmdb", base.joinpath("res_env")])
     elif use_env:
         logger.info(
-            f"Skipping {metagenomic_db} search because \
-bfd.mgnify30.metaeuk30.smag30.a3m already exists")
+            f"bfd.mgnify30.metaeuk30.smag30.a3m 파일이 이미 존재하므로 {metagenomic_db} 검색을 건너<0xEB><0x9B><0x84>니다."
+            )
 
+    # template_db.m8.dbtype이 존재하지 않으면 template_db 검색 실행
     tmpl_db_exists = base.joinpath(
         f"{template_db}.m8"
     ).with_suffix('.m8.dbtype').exists()
@@ -653,7 +685,7 @@ gapopen,qstart,qend,tstart,tend,evalue,bits,cigar",
         run_mmseqs_command(mmseqs, ["rmdb", base.joinpath("res_pdb")])
     elif use_templates:
         logger.info(
-            f"Skipping {template_db} search because {template_db}.m8 already exists"
+            f"{template_db}.m8 파일이 이미 존재하므로 {template_db} 검색을 건너<0xEB><0x9B><0x84>니다."
             )
 
     if use_env:
@@ -715,7 +747,7 @@ gapopen,qstart,qend,tstart,tend,evalue,bits,cigar",
 
     query_file.unlink()
 
-    # Gather a3m lines in the same way as the API
+    # API와 동일한 방식으로 a3m 라인 수집
     seqs = [x] if isinstance(x, str) else x
     N = 101
     seqs_unique = list(set(seqs))
@@ -724,7 +756,7 @@ gapopen,qstart,qend,tstart,tend,evalue,bits,cigar",
     a3m_lines_list = ["".join(a3m_lines[n]) for n in Ms]
 
     if use_templates:
-        templates = get_templates(
+        templates_list = get_templates( # 변수명 변경: templates -> templates_list
             x,
             base,
             "0.m8",
@@ -732,10 +764,19 @@ gapopen,qstart,qend,tstart,tend,evalue,bits,cigar",
             mmseqs_db=mmseqs_db,
         )
 
-    return (a3m_lines_list, templates) if use_templates else a3m_lines_list
+    return (a3m_lines_list, templates_list) if use_templates else a3m_lines_list # 변수명 변경
 
 
 def get_a3m_lines(output_a3m):
+    """
+    A3M 파일을 파싱하여 서열 딕셔너리를 반환합니다.
+
+    Args:
+        output_a3m (str or Path): A3M 파일 경로.
+
+    Returns:
+        dict: 서열 ID(int)를 문자열 라인 목록(str)에 매핑하는 딕셔너리입니다.
+    """
     a3m_lines: dict = {}
     update_M, M = True, None
     for line in open(output_a3m, "r"):
@@ -755,11 +796,11 @@ def get_a3m_lines(output_a3m):
 
 def get_templates(x, base, m8, num_templates, mmseqs_db=None):
     tested_pdbs = []
-    templates = []
-    logger.info("Finding and preparing templates")
+    templates_list_local = [] # 변수명 변경: templates -> templates_list_local
+    logger.info("템플릿 검색 및 준비 중")
     count = 0
     for line in open(base.joinpath(m8), "r"):
-        template = {}
+        template_item = {} # 변수명 변경: template -> template_item
         if count < num_templates:
             p = line.rstrip().split()
             pdb, qid, alilen, tstart, tend = (
@@ -772,7 +813,7 @@ def get_templates(x, base, m8, num_templates, mmseqs_db=None):
             coverage = alilen / len(x)
             pdb_id = pdb.split("_")[0]
 
-            # Use the same template filters as AF3 and only use 1 template per PDB
+            # AF3와 동일한 템플릿 필터를 사용하고 PDB당 1개의 템플릿만 사용
             if (
                 qid == 1.0
                 and coverage >= 0.95
@@ -795,18 +836,18 @@ def get_templates(x, base, m8, num_templates, mmseqs_db=None):
                                       tstart,
                                       tend,
                                       base)
-            template["mmcif"] = cif_str
+            template_item["mmcif"] = cif_str # 변수명 변경
 
             template_seq = extract_sequence_from_mmcif(StringIO(cif_str))
             query_indices, template_indices = align_and_map(x, template_seq)
 
-            template["queryIndices"] = query_indices
-            template["templateIndices"] = template_indices
-            templates.append(template)
+            template_item["queryIndices"] = query_indices # 변수명 변경
+            template_item["templateIndices"] = template_indices # 변수명 변경
+            templates_list_local.append(template_item) # 변수명 변경
             tested_pdbs.append(pdb_id)
             count += 1
-    logger.info(f"Found the following templates: {tested_pdbs}")
-    return templates
+    logger.info(f"다음 템플릿을 찾았습니다: {tested_pdbs}")
+    return templates_list_local # 변수명 변경
 
 
 def fetch_mmcif(
@@ -817,8 +858,7 @@ def fetch_mmcif(
     tmpdir,
 ):
     """
-    Fetch the mmcif file for a given PDB ID
-    and chain ID and prepare it for use in AlphaFold3
+    주어진 PDB ID 및 체인 ID에 대한 mmCIF 파일을 가져와 AlphaFold3에서 사용할 수 있도록 준비합니다.
     """
     pdb_id = pdb_id.lower()
     url_base = "http://www.ebi.ac.uk/pdbe-srv/view/files/"
@@ -842,15 +882,14 @@ def fetch_local_mmcif(
         mmseqs_db,
 ):
     """
-    Fetch the mmcif file for a given PDB ID
-    and chain ID and prepare it for use in AlphaFold3
+    주어진 PDB ID 및 체인 ID에 대한 로컬 mmCIF 파일을 가져와 AlphaFold3에서 사용할 수 있도록 준비합니다.
     """
     pdb_id = pdb_id.lower()
-    assert len(pdb_id) == 4, f"Invalid PDB ID: {pdb_id}"
+    assert len(pdb_id) == 4, f"잘못된 PDB ID: {pdb_id}"
     inner_code = pdb_id[1:3]
     mmcif_location = mmseqs_db.joinpath(f"pdb/divided/{inner_code}/{pdb_id}.cif.gz")
     if not mmcif_location.exists():
-        raise FileNotFoundError(f"MMseqs2 database {mmcif_location} does not exist")
+        raise FileNotFoundError(f"MMseqs2 데이터베이스 {mmcif_location}이(가) 존재하지 않습니다.")
     with gzip.open(mmcif_location, "rb") as f:
         cif_str = f.read().decode("utf-8")
 
@@ -865,10 +904,10 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Add MMseqs2 unpaired MSA to AlphaFold3 json"
+        description="AlphaFold3 JSON에 MMseqs2 unpaired MSA 추가"
     )
-    parser.add_argument("--input_json", help="Input alphafold3 json file")
-    parser.add_argument("--output_json", help="Output alphafold3 json file")
+    parser.add_argument("--input_json", help="입력 AlphaFold3 JSON 파일")
+    parser.add_argument("--output_json", help="출력 AlphaFold3 JSON 파일")
 
     parser = mmseqs2_argparse_util(parser)
     parser = custom_template_argpase_util(parser)

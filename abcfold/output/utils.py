@@ -22,7 +22,9 @@ AF3TEMPLATE: dict = {
 class Af3Pae:
     @classmethod
     def from_alphafold3(cls, scores: dict, cif_file: CifFile):
+        """AlphaFold3 출력에서 Af3Pae 객체를 생성합니다."""
         def reorder_matrix(pae_matrix, chain_lengths, af3_chain_lengths):
+            # PAE 행렬이 numpy 배열이 아니면 변환합니다.
             if not isinstance(pae_matrix, np.ndarray):
                 pae_matrix = np.array(pae_matrix)
             desired_order = flatten(
@@ -109,6 +111,7 @@ class Af3Pae:
 
     @classmethod
     def from_boltz(cls, scores: dict, cif_file: CifFile):
+        """Boltz 출력에서 Af3Pae 객체를 생성합니다."""
         af3_scores = AF3TEMPLATE.copy()
 
         chain_lengths = cif_file.chain_lengths(mode="residues", ligand_atoms=True)
@@ -141,6 +144,7 @@ class Af3Pae:
 
     @classmethod
     def from_chai1(cls, scores: np.ndarray, cif_file: CifFile):
+        """Chai-1 출력에서 Af3Pae 객체를 생성합니다."""
         af3_scores = AF3TEMPLATE.copy()
         chain_lengths = cif_file.chain_lengths(mode="residues", ligand_atoms=True)
 
@@ -172,30 +176,32 @@ class Af3Pae:
         return cls(af3_scores)
 
     def __init__(self, af3_scores: dict):
+        """Af3Pae 객체를 초기화합니다."""
         self.scores = af3_scores
 
     def to_file(self, file_path: Union[str, Path]):
+        """PAE 점수를 JSON 파일로 저장합니다."""
         with open(file_path, "w") as f:
             json.dump(self.scores, f, indent=4)
 
 
 def flatten(xss):
+    """중첩된 리스트를 단일 리스트로 평탄화합니다."""
     return [x for xs in xss for x in xs]
 
 
 def get_gap_indicies(*cif_objs) -> List[np.ndarray]:
     """
-    Get the the gaps inbetween cif objects. Sometimes there is a discrepency
-    between chain lengths between the modelling programs. This function is
-    used to find where these discrepencies are.
+    CIF 객체들 사이의 갭을 가져옵니다. 모델링 프로그램 간에 체인 길이가
+    일치하지 않는 경우가 있는데, 이 함수는 이러한 불일치가 발생하는 위치를 찾는 데 사용됩니다.
 
     Args:
-        *cif_objs: Multiple cif objects
+        *cif_objs: 다중 CIF 객체
 
     Returns:
-        indicies: Dict with the chain_id as the key where the discrepency is located and
-            the value is a list of indicies with -1 representing gaps
-
+        indicies: 불일치가 위치한 체인 ID를 키로 하고, -1이 갭을 나타내는
+                  인덱스 목록을 값으로 하는 딕셔너리입니다.
+                  (현재 반환 타입은 List[np.ndarray]로 되어 있으나, 설명은 딕셔너리 형태로 되어 있어 확인 필요)
     """
     indicies: list = []
 
@@ -248,6 +254,18 @@ def get_gap_indicies(*cif_objs) -> List[np.ndarray]:
 
 
 def interleave_repeated(lst, n, chain_no):
+    """
+    반복을 기반으로 리스트의 리스트(청크)에서 요소들을 인터리빙합니다.
+    get_gap_indicies의 헬퍼 함수입니다.
+
+    Args:
+        lst (list): 처리될 리스트로, 청크에서 평탄화된 것으로 예상됩니다.
+        n (int): 원본 CIF 객체의 수 (반복 횟수).
+        chain_no (int): 체인의 수.
+
+    Returns:
+        list: 원본 CIF 객체별로 그룹화된 인터리빙된 인덱스 목록입니다.
+    """
     indicies = []
     chunks = [lst[i : i + n] for i in range(0, len(lst), n)]  # noqa: E203
     interleaved = [x for tup in zip_longest(*chunks) for x in tup if x is not None]
@@ -262,6 +280,16 @@ def interleave_repeated(lst, n, chain_no):
 
 
 def insert_none_by_minus_one(indices, values):
+    """
+    `indices`의 해당 인덱스가 -1인 모든 위치에 None을 값 목록에 삽입합니다.
+
+    Args:
+        indices (list): -1이 갭을 나타내는 인덱스 목록입니다.
+        values (list): 삽입될 값 목록입니다.
+
+    Returns:
+        list: 갭 위치에 None이 삽입된 새 목록입니다.
+    """
     result = []
     value_index = 0
 
@@ -279,7 +307,7 @@ def insert_none_by_minus_one(indices, values):
 
 def make_dummy_m8_file(run_json, output_dir):
     """
-    Make a dummy m8 file with the templates from the run JSON file
+    실행 JSON 파일의 템플릿으로 더미 m8 파일을 만듭니다.
     """
     with open(run_json) as f:
         input_json = json.load(f)
