@@ -33,7 +33,7 @@ dependencies = [
     "pandas==2.2.3",
     "plotly",
     "jinja2",
-    "pyarrow==19.0.1",
+    "pyarrow==23.0.1",
     "reactifptm",
     "gemmi",
 ]
