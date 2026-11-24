@@ -27,7 +27,7 @@ dependencies = [
     "numpy==1.26.4",
     "colorama",
     "tqdm",
-    "biopython==1.84",
+    "biopython==1.87",
     "requests",
     "types-requests",
     "pandas==2.2.3",
